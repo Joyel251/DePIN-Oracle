@@ -22,12 +22,6 @@ export function ChatInterface() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const extractAddress = (text: string): string | null => {
-    // Extract Helium hotspot address (looks like: 112xxxxxxx...)
-    const match = text.match(/11[a-zA-Z0-9]{40,}/);
-    return match ? match[0] : null;
-  };
-
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
@@ -39,54 +33,67 @@ export function ChatInterface() {
     setLoading(true);
 
     try {
-      // Extract device address from message
-      const address = extractAddress(userMessage);
+      // Step 1: Send to AI agent for intent detection
+      const agentResponse = await fetch('/api/agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: userMessage }),
+      });
 
-      if (!address) {
+      const agentData = await agentResponse.json();
+
+      if (!agentResponse.ok) {
+        throw new Error(agentData.error || 'Agent processing failed');
+      }
+
+      // Show agent's initial response
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: agentData.response,
+        },
+      ]);
+
+      // Step 2: If intent is to analyze, proceed with analysis
+      if (agentData.intent === 'analyze_device' && agentData.extractedData.deviceAddress) {
+        const address = agentData.extractedData.deviceAddress;
+
+        // Call analysis API
+        const analysisResponse = await fetch('/api/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            address,
+            network: 'helium',
+            topicId: process.env.NEXT_PUBLIC_HEDERA_TOPIC_ID,
+          }),
+        });
+
+        const analysisData = await analysisResponse.json();
+
+        if (!analysisResponse.ok) {
+          throw new Error(analysisData.error || 'Analysis failed');
+        }
+
+        // Add analysis results
         setMessages((prev) => [
           ...prev,
           {
             role: 'assistant',
-            content: '🤔 I couldn\'t find a valid Helium hotspot address. Please provide an address like:\n\n"Analyze 112e4Q8BehN..."',
+            content: '✅ Analysis complete! Here\'s what I found:',
+            analysis: analysisData.analysis,
+            txId: analysisData.txId,
           },
         ]);
-        return;
       }
-
-      // Call analysis API
-      const response = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address,
-          network: 'helium',
-          topicId: process.env.NEXT_PUBLIC_HEDERA_TOPIC_ID,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Analysis failed');
-      }
-
-      // Add assistant response with analysis
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: '✅ Analysis complete! Here\'s what I found:',
-          analysis: data.analysis,
-          txId: data.txId,
-        },
-      ]);
     } catch (error: any) {
-      console.error('Analysis error:', error);
+      console.error('Error:', error);
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `❌ Sorry, I encountered an error: ${error.message}\n\nPlease check the device address and try again.`,
+          content: `❌ Sorry, I encountered an error: ${error.message}\n\nPlease try again.`,
         },
       ]);
     } finally {
