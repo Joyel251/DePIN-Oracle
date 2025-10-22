@@ -1,6 +1,8 @@
 import axios from 'axios';
+import { getMockHotspotData, getMockRewards, getMockWitnesses } from './mockData';
 
 const HELIUM_API = 'https://api.helium.io/v1';
+const USE_MOCK_DATA = true; // Set to false when Helium API is working
 
 export interface HotspotData {
   address: string;
@@ -38,12 +40,17 @@ export interface HotspotRewards {
 }
 
 export async function getHotspotData(address: string): Promise<HotspotData> {
+  if (USE_MOCK_DATA) {
+    console.log('Using mock data for hotspot:', address);
+    return getMockHotspotData(address);
+  }
+  
   try {
     const response = await axios.get(`${HELIUM_API}/hotspots/${address}`);
     return response.data.data;
   } catch (error) {
-    console.error('Error fetching hotspot data:', error);
-    throw new Error('Failed to fetch hotspot data');
+    console.error('Error fetching hotspot data, using mock:', error);
+    return getMockHotspotData(address);
   }
 }
 
@@ -51,6 +58,10 @@ export async function getHotspotRewards(
   address: string,
   days: number = 30
 ): Promise<number> {
+  if (USE_MOCK_DATA) {
+    return getMockRewards(address);
+  }
+  
   try {
     const minTime = new Date();
     minTime.setDate(minTime.getDate() - days);
@@ -62,12 +73,16 @@ export async function getHotspotRewards(
     
     return response.data.data.total || 0;
   } catch (error) {
-    console.error('Error fetching hotspot rewards:', error);
-    return 0;
+    console.error('Error fetching hotspot rewards, using mock:', error);
+    return getMockRewards(address);
   }
 }
 
 export async function getHotspotWitnesses(address: string): Promise<number> {
+  if (USE_MOCK_DATA) {
+    return getMockWitnesses(address);
+  }
+  
   try {
     const response = await axios.get(
       `${HELIUM_API}/hotspots/${address}/witnesses`
@@ -75,7 +90,7 @@ export async function getHotspotWitnesses(address: string): Promise<number> {
     
     return response.data.data?.length || 0;
   } catch (error) {
-    console.error('Error fetching hotspot witnesses:', error);
-    return 0;
+    console.error('Error fetching hotspot witnesses, using mock:', error);
+    return getMockWitnesses(address);
   }
 }

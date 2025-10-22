@@ -1,6 +1,6 @@
-import { PriceServiceConnection } from '@pythnetwork/price-service-client';
+import { HermesClient } from '@pythnetwork/hermes-client';
 
-const connection = new PriceServiceConnection(
+const connection = new HermesClient(
   process.env.PYTH_API_URL || 'https://hermes.pyth.network'
 );
 
@@ -29,15 +29,16 @@ export async function getTokenPrice(symbol: string): Promise<number> {
       return mockPrices[symbol.toUpperCase()] || 1;
     }
     
-    const priceFeeds = await connection.getLatestPriceFeeds([priceId]);
-    const price = priceFeeds[0]?.getPriceUnchecked();
+    const priceFeeds = await connection.getLatestPriceUpdates([priceId]);
     
-    if (!price) {
+    if (!priceFeeds?.parsed || priceFeeds.parsed.length === 0) {
       throw new Error(`No price data for ${symbol}`);
     }
     
-    // Convert price (Pyth uses 8 decimals)
-    return Number(price.price) / Math.pow(10, Math.abs(price.expo));
+    const priceData = priceFeeds.parsed[0].price;
+    
+    // Convert price (Pyth uses expo for decimal places)
+    return Number(priceData.price) * Math.pow(10, priceData.expo);
   } catch (error) {
     console.error(`Error fetching price for ${symbol}:`, error);
     throw new Error(`Failed to fetch price for ${symbol}`);

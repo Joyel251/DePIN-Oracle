@@ -1,0 +1,124 @@
+{
+  "lib/api/analyzer.ts": {
+    "language": "typescript",
+    "exports": ["DeviceAnalysis", "analyzeHeliumHotspot"],
+    "types": ["DeviceAnalysis"],
+    "description": "Core analysis logic that fetches Helium hotspot data, price data and computes risk, ROI and recommendations.",
+    "snippet": "import { getHotspotData, getHotspotRewards, getHotspotWitnesses } from './helium';\nimport { getTokenPrice, calculateUSDValue } from './pyth';\nimport { storeAnalysis } from './hedera';\nexport interface DeviceAnalysis { ... }"
+  },
+  "lib/api/hedera.ts": {
+    "language": "typescript",
+    "exports": ["getHederaClient", "createAnalysisTopic", "storeAnalysis", "getStoredAnalysis"],
+    "types": [],
+    "description": "Utility functions to interact with Hedera: client creation, topic creation and storing/retrieving analysis messages.",
+    "snippet": "import { Client, TopicCreateTransaction, TopicMessageSubmitTransaction, TopicId, PrivateKey } from '@hashgraph/sdk';\nlet client: Client | null = null;\nexport function getHederaClient() { ... }"
+  },
+  "lib/api/helium.ts": {
+    "language": "typescript",
+    "exports": ["getHotspotData", "getHotspotRewards", "getHotspotWitnesses", "HotspotData", "HotspotRewards"],
+    "types": ["HotspotData", "HotspotRewards"],
+    "description": "Small wrapper over Helium Public APIs to fetch hotspot metadata, rewards and witness data.",
+    "snippet": "import axios from 'axios';\nconst HELIUM_API = 'https://api.helium.io/v1';\nexport interface HotspotData { ... }\nexport async function getHotspotData(address: string) { ... }"
+  },
+  "lib/api/pyth.ts": {
+    "language": "typescript",
+    "exports": ["PRICE_FEEDS", "getTokenPrice", "calculateUSDValue", "getMultiplePrices"],
+    "types": [],
+    "description": "Pyth network price helpers to fetch token prices (uses Hermes client) and calculate USD values.",
+    "snippet": "import { HermesClient } from '@pythnetwork/hermes-client';\nconst connection = new HermesClient(process.env.PYTH_API_URL || 'https://hermes.pyth.network');\nexport const PRICE_FEEDS = { HNT: '0x4c...' };"
+  },
+  "app/api/analyze/route.ts": {
+    "language": "typescript",
+    "exports": ["POST"],
+    "types": [],
+    "description": "Next.js API route that accepts a device address and runs `analyzeHeliumHotspot`, returning JSON result.",
+    "snippet": "import { NextRequest, NextResponse } from 'next/server';\nimport { analyzeHeliumHotspot } from '@/lib/api/analyzer';\nexport async function POST(request: NextRequest) { ... }"
+  },
+  "components/ChatInterface.tsx": {
+    "language": "tsx",
+    "exports": ["ChatInterface"],
+    "types": ["Message"],
+    "description": "Client UI component that accepts natural-language requests, extracts Helium addresses and calls the analysis API.",
+    "snippet": "'use client';\nimport { useState } from 'react';\nimport { Send, Loader2 } from 'lucide-react';\nimport { AnalysisCard } from './AnalysisCard';\nexport function ChatInterface() { ... }"
+  },
+  "components/AnalysisCard.tsx": {
+    "language": "tsx",
+    "exports": ["AnalysisCard"],
+    "types": ["AnalysisCardProps"],
+    "description": "Presentation component that renders a `DeviceAnalysis` object with metrics, prediction and risk factors.",
+    "snippet": "import type { DeviceAnalysis } from '@/lib/api/analyzer';\nimport { ExternalLink, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';\nexport function AnalysisCard({ analysis, txId }: AnalysisCardProps) { ... }"
+  },
+  "app/page.tsx": {
+    "language": "tsx",
+    "exports": ["default"],
+    "types": [],
+    "description": "Landing page that composes the `ChatInterface` and page header.",
+    "snippet": "import { ChatInterface } from '@/components/ChatInterface';\nexport default function Home() { return (<main>...<ChatInterface /></main>) }"
+  },
+  "app/layout.tsx": {
+    "language": "tsx",
+    "exports": ["metadata", "default"],
+    "types": ["Metadata"],
+    "description": "Root layout for the Next app; sets metadata and global font + CSS.",
+    "snippet": "import type { Metadata } from 'next'\nimport { Inter } from 'next/font/google'\nimport './globals.css'\nexport const metadata: Metadata = { title: 'DePIN Oracle - AI Agent for Infrastructure Analysis' }"
+  },
+  "app/loading.tsx": {
+    "language": "tsx",
+    "exports": ["default"],
+    "types": [],
+    "description": "Simple loading UI used by the Next app during suspense boundaries.",
+    "snippet": "export default function Loading() { return (<div className=\"min-h-screen\">Loading DePIN Oracle...</div>) }"
+  },
+  "app/error.tsx": {
+    "language": "tsx",
+    "exports": ["default"],
+    "types": [],
+    "description": "Client-side error UI for the app directory error boundaries.",
+    "snippet": "'use client'; export default function Error({ error, reset }) { return (<div>Something went wrong</div>); }"
+  },
+  "package.json": {
+    "language": "json",
+    "exports": [],
+    "types": [],
+    "description": "Project manifest with scripts and dependency declarations.",
+    "snippet": "{ \"name\": \"depin-oracle\", \"version\": \"0.1.0\", \"scripts\": { \"dev\": \"next dev\" } }"
+  },
+  "next.config.js": {
+    "language": "javascript",
+    "exports": ["module.exports"],
+    "types": [],
+    "description": "Next.js configuration (reactStrictMode enabled).",
+    "snippet": "const nextConfig = { reactStrictMode: true }; module.exports = nextConfig"
+  },
+  "tailwind.config.js": {
+    "language": "javascript",
+    "exports": ["module.exports"],
+    "types": [],
+    "description": "Tailwind CSS config listing content globs used for purging.",
+    "snippet": "module.exports = { content: ['./pages/**/*.{js,ts,jsx,tsx,mdx}', './components/**/*.{js,ts,jsx,tsx,mdx}', './app/**/*.{js,ts,jsx,tsx,mdx}'] }"
+  },
+  "postcss.config.js": {
+    "language": "javascript",
+    "exports": ["module.exports"],
+    "description": "PostCSS config enabling Tailwind and Autoprefixer.",
+    "snippet": "module.exports = { plugins: { tailwindcss: {}, autoprefixer: {} } }"
+  },
+  "tsconfig.json": {
+    "language": "json",
+    "exports": [],
+    "description": "TypeScript configuration and path alias for `@/*`.",
+    "snippet": "{ \"compilerOptions\": { \"paths\": { \"@/*\": [\"./*\"] } } }"
+  },
+  ".eslintrc.json": {
+    "language": "json",
+    "exports": [],
+    "description": "ESLint config extending Next.js core rules.",
+    "snippet": "{ \"extends\": \"next/core-web-vitals\" }"
+  },
+  "next-env.d.ts": {
+    "language": "typescript",
+    "exports": [],
+    "description": "Auto-generated Next.js environment types reference file.",
+    "snippet": "/// <reference types=\"next\" />\n/// <reference types=\"next/image-types/global\" />"
+  }
+}
